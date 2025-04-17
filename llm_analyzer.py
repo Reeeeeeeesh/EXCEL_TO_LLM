@@ -58,20 +58,22 @@ class LLMAnalyzer:
             content_tokens = self.count_tokens(markdown_content)
             print(f"Total content tokens: {content_tokens}")
             
-            if content_tokens > 1000000:  # Gemini's token limit is around 1M tokens
-                print("Content too large, chunking for analysis...")
-                chunks = self.chunk_content(markdown_content, max_tokens=800000)  # Use a safe limit
-                print(f"Split content into {len(chunks)} chunks")
+            # Always use chunking for large documents to be safe
+            print("Chunking content for analysis...")
+            chunks = self.chunk_content(markdown_content, max_tokens=500000)  # Much more conservative limit
+            print(f"Split content into {len(chunks)} chunks")
+            
+            # Process each chunk and combine results
+            all_analyses = []
+            for i, chunk in enumerate(chunks):
+                chunk_tokens = self.count_tokens(chunk)
+                print(f"Processing chunk {i+1}/{len(chunks)}, tokens: {chunk_tokens}")
                 
-                # Process each chunk and combine results
-                all_analyses = []
-                for i, chunk in enumerate(chunks):
-                    print(f"Processing chunk {i+1}/{len(chunks)}, tokens: {self.count_tokens(chunk)}")
-                    
-                    # Combine system prompt with chunk
-                    chunk_prompt = f"{self.system_prompt}\n\nAnalyze this portion ({i+1}/{len(chunks)}) of the Excel spreadsheet content:\n\n{chunk}"
-                    
-                    # Generate analysis for this chunk
+                # Combine system prompt with chunk
+                chunk_prompt = f"{self.system_prompt}\n\nAnalyze this portion ({i+1}/{len(chunks)}) of the Excel spreadsheet content:\n\n{chunk}"
+                
+                # Generate analysis for this chunk
+                try:
                     response = self.model.generate_content(
                         contents=chunk_prompt,
                         generation_config=genai.types.GenerationConfig(
@@ -84,37 +86,45 @@ class LLMAnalyzer:
                     
                     if response.text:
                         all_analyses.append(response.text)
+                        print(f"Successfully analyzed chunk {i+1}")
                     else:
                         print(f"Error: Empty response from Gemini for chunk {i+1}")
-                
-                # Combine all analyses
-                if all_analyses:
-                    combined_analysis = "\n\n## Analysis of Next Section\n\n".join(all_analyses)
-                    return combined_analysis
-                else:
-                    print("Error: No successful analyses from any chunks")
-                    return None
+                except Exception as chunk_error:
+                    print(f"Error processing chunk {i+1}: {str(chunk_error)}")
+                    # Try with an even smaller chunk if possible
+                    if chunk_tokens > 200000:
+                        print(f"Attempting to split chunk {i+1} further...")
+                        subchunks = self.chunk_content(chunk, max_tokens=200000)
+                        print(f"Split chunk {i+1} into {len(subchunks)} subchunks")
+                        
+                        for j, subchunk in enumerate(subchunks):
+                            try:
+                                subchunk_prompt = f"{self.system_prompt}\n\nAnalyze this portion ({i+1}.{j+1}) of the Excel spreadsheet content:\n\n{subchunk}"
+                                subresponse = self.model.generate_content(
+                                    contents=subchunk_prompt,
+                                    generation_config=genai.types.GenerationConfig(
+                                        temperature=0.7,
+                                        top_p=0.8,
+                                        top_k=40,
+                                        max_output_tokens=8192,
+                                    )
+                                )
+                                
+                                if subresponse.text:
+                                    all_analyses.append(subresponse.text)
+                                    print(f"Successfully analyzed subchunk {i+1}.{j+1}")
+                                else:
+                                    print(f"Error: Empty response from Gemini for subchunk {i+1}.{j+1}")
+                            except Exception as subchunk_error:
+                                print(f"Error processing subchunk {i+1}.{j+1}: {str(subchunk_error)}")
+            
+            # Combine all analyses
+            if all_analyses:
+                combined_analysis = "\n\n## Analysis of Next Section\n\n".join(all_analyses)
+                return combined_analysis
             else:
-                # For smaller content, process as before
-                # Combine system prompt with content
-                full_prompt = f"{self.system_prompt}\n\nAnalyze this Excel spreadsheet content:\n\n{markdown_content}"
-                
-                # Generate analysis using the correct method
-                response = self.model.generate_content(
-                    contents=full_prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=0.7,
-                        top_p=0.8,
-                        top_k=40,
-                        max_output_tokens=8192,
-                    )
-                )
-                
-                if response.text:
-                    return response.text
-                else:
-                    print("Error: Empty response from Gemini")
-                    return None
+                print("Error: No successful analyses from any chunks")
+                return None
                 
         except Exception as e:
             print(f"Error in LLM analysis: {str(e)}")
