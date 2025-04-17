@@ -1,6 +1,6 @@
 # Excel to LLM Converter
 
-This application converts Excel spreadsheets into structured data for Large Language Model (LLM) processing. It extracts data from Excel files and prepares it for analysis using Google's Gemini API.
+This application converts Excel spreadsheets into structured data for Large Language Model (LLM) processing. It extracts data from Excel files and prepares it for analysis using Google's Gemini 2.5 Pro Preview API.
 
 ## Features
 

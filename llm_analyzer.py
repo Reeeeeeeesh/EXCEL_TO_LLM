@@ -7,7 +7,7 @@ from pathlib import Path
 class LLMAnalyzer:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')  # Changed to gemini-pro
+        self.model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')  # Updated to gemini-2.5-pro-preview-03-25
         self.system_prompt = """You are an advanced analytical assistant tasked with analyzing a converted Markdown representation of an Excel spreadsheet. Carefully absorb the provided content and produce a detailed report on the workings of the original spreadsheet. Your report must include:
 1. A summary of the overall purpose of the spreadsheet.
 2. A sheet-by-sheet breakdown with details on each sheet's purpose, formulas, data tables, and unique features.
@@ -50,7 +50,7 @@ class LLMAnalyzer:
 
     def analyze_markdown(self, markdown_content: str) -> Optional[str]:
         """
-        Analyze the markdown content using Google's Gemini Pro model.
+        Analyze the markdown content using Google's Gemini 2.5 Pro Preview model.
         Sends the entire content in one go as Gemini can handle larger contexts.
         """
         try:
