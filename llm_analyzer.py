@@ -8,12 +8,38 @@ class LLMAnalyzer:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.5-pro-preview-03-25')  # Updated to gemini-2.5-pro-preview-03-25
-        self.system_prompt = """You are an advanced analytical assistant tasked with analyzing a converted Markdown representation of an Excel spreadsheet. Carefully absorb the provided content and produce a detailed report on the workings of the original spreadsheet. Your report must include:
-1. A summary of the overall purpose of the spreadsheet.
-2. A sheet-by-sheet breakdown with details on each sheet's purpose, formulas, data tables, and unique features.
-3. An explanation of inter-sheet relationships and data dependencies.
-4. Identification of the spreadsheet's unique features or innovations.
-5. Recommendations for improving the spreadsheet's design or functionality."""
+        self.system_prompt = """You are an advanced analytical assistant tasked with creating a user guide for an Excel spreadsheet based on its Markdown representation. Your goal is to help a first-time user understand how to use this spreadsheet effectively. Produce a detailed, practical guide that includes:
+
+1. EXECUTIVE SUMMARY: A brief overview of what this spreadsheet does and its primary purpose (2-3 sentences).
+
+2. USER WORKFLOW: Step-by-step instructions on how a user should interact with the spreadsheet:
+   - Which sheets to start with
+   - What inputs they need to provide and where
+   - How to navigate between sheets
+   - How to interpret the outputs
+
+3. KEY INPUTS: Identify and explain all important input cells/sections:
+   - Where they are located (sheet and cell references if available)
+   - What each input represents
+   - Acceptable values or ranges
+   - How changing these inputs affects the outputs
+
+4. KEY OUTPUTS: Identify and explain all important output cells/sections:
+   - Where they are located
+   - What each output represents
+   - How to interpret the results
+   - Any visualizations or dashboards available
+
+5. CALCULATION LOGIC: Explain in simple terms how the spreadsheet works:
+   - How inputs are transformed into outputs
+   - Key formulas and their purpose (in plain English, not Excel syntax)
+   - Any macros, data tables, or scenarios and how to use them
+
+6. TROUBLESHOOTING: Common issues users might encounter and how to resolve them.
+
+7. RECOMMENDATIONS: Suggestions for best practices when using this spreadsheet.
+
+Use clear, non-technical language suitable for business users who may not be Excel experts. Include specific cell references and sheet names whenever possible. Format your response with headers, bullet points, and numbered lists for readability."""
 
     def count_tokens(self, text: str) -> int:
         """Count the number of tokens in a text string."""
